@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * File Name          : freertos.c
-  * Description        : Code for freertos applications
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * File Name          : freertos.c
+ * Description        : Code for freertos applications
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2021 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -25,7 +25,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "i2c.h"
+#include "usart.h"
+#include "gy_88.h"
 
+#include <string.h> /* for debug messages */
+#include <stdio.h> /* for sprintf */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,16 +55,16 @@
 /* Definitions for statusTask */
 osThreadId_t statusTaskHandle;
 const osThreadAttr_t statusTask_attributes = {
-  .name = "statusTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityBelowNormal,
+		.name = "statusTask",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for commsTask */
 osThreadId_t commsTaskHandle;
 const osThreadAttr_t commsTask_attributes = {
-  .name = "commsTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+		.name = "commsTask",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,82 +78,92 @@ void StartCommsTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+	/* USER CODE BEGIN RTOS_MUTEX */
+	/* add mutexes, ... */
+	/* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+	/* USER CODE BEGIN RTOS_SEMAPHORES */
+	/* add semaphores, ... */
+	/* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+	/* USER CODE BEGIN RTOS_TIMERS */
+	/* start timers, add new ones, ... */
+	/* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+	/* USER CODE BEGIN RTOS_QUEUES */
+	/* add queues, ... */
+	/* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of statusTask */
-  statusTaskHandle = osThreadNew(StartStatusTask, NULL, &statusTask_attributes);
+	/* Create the thread(s) */
+	/* creation of statusTask */
+	statusTaskHandle = osThreadNew(StartStatusTask, NULL, &statusTask_attributes);
 
-  /* creation of commsTask */
-  commsTaskHandle = osThreadNew(StartCommsTask, NULL, &commsTask_attributes);
+	/* creation of commsTask */
+	commsTaskHandle = osThreadNew(StartCommsTask, NULL, &commsTask_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+	/* USER CODE BEGIN RTOS_THREADS */
+	/* add threads, ... */
+	/* USER CODE END RTOS_THREADS */
 
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
+	/* USER CODE BEGIN RTOS_EVENTS */
+	/* add events, ... */
+	/* USER CODE END RTOS_EVENTS */
 
 }
 
 /* USER CODE BEGIN Header_StartStatusTask */
 /**
-  * @brief  Function implementing the statusTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
+ * @brief  Function implementing the statusTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartStatusTask */
 void StartStatusTask(void *argument)
 {
-  /* USER CODE BEGIN StartStatusTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartStatusTask */
+	/* USER CODE BEGIN StartStatusTask */
+	// Currently only blink every second to indicate the program is running
+	for(;;)
+	{
+		osDelay(1000);
+		GPIOC -> ODR ^= GPIO_PIN_13;
+	}
+	/* USER CODE END StartStatusTask */
 }
 
 /* USER CODE BEGIN Header_StartCommsTask */
 /**
-* @brief Function implementing the commsTask thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the commsTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartCommsTask */
 void StartCommsTask(void *argument)
 {
-  /* USER CODE BEGIN StartCommsTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartCommsTask */
+	/* USER CODE BEGIN StartCommsTask */
+	HAL_StatusTypeDef status = MPU6050_Init();
+	if (status != HAL_OK)
+	{
+		char buffer[40];
+		sprintf(buffer, "gy-88 init failed\n\rs: %02x\n\r", status);
+		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+	}
+
+	char test_data = 'c';
+	for(;;)
+	{
+		osDelay(1000);
+		HAL_UART_Transmit(&huart1, &test_data, 1, 100);
+	}
+	/* USER CODE END StartCommsTask */
 }
 
 /* Private application code --------------------------------------------------*/
