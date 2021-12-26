@@ -32,6 +32,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+// Default address of PCF8574T (No Address pins shorted to ground)
+#define PCF8574T_ADDRESS 0x4E << 1
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -40,17 +44,19 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-/* Definitions for blinkTask01 */
-osThreadId_t blinkTask01Handle;
-const osThreadAttr_t blinkTask01_attributes = {
-		.name = "blinkTask01",
+I2C_HandleTypeDef hi2c1;
+
+/* Definitions for statusTask */
+osThreadId_t statusTaskHandle;
+const osThreadAttr_t statusTask_attributes = {
+		.name = "statusTask",
 		.stack_size = 128 * 4,
-		.priority = (osPriority_t) osPriorityNormal,
+		.priority = (osPriority_t) osPriorityBelowNormal,
 };
-/* Definitions for blinkTask02 */
-osThreadId_t blinkTask02Handle;
-const osThreadAttr_t blinkTask02_attributes = {
-		.name = "blinkTask02",
+/* Definitions for I2CTask */
+osThreadId_t I2CTaskHandle;
+const osThreadAttr_t I2CTask_attributes = {
+		.name = "I2CTask",
 		.stack_size = 128 * 4,
 		.priority = (osPriority_t) osPriorityBelowNormal,
 };
@@ -61,11 +67,14 @@ const osThreadAttr_t blinkTask02_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-void StartDefaultTask(void *argument);
-void StartTask02(void *argument);
+static void MX_I2C1_Init(void);
+void StartStatusTask(void *argument);
+void StartCommsTask(void *argument);
 
 /* USER CODE BEGIN PFP */
-
+// Functions relating to the control of the 1602A-QAPASS LCD screen
+void QAPASS_Init(void);
+void QAPASS_Write_Data(uint8_t data);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -101,6 +110,7 @@ int main(void)
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
+	MX_I2C1_Init();
 	/* USER CODE BEGIN 2 */
 	// Set initial state of the LED to off
 	GPIOC -> ODR |= GPIO_PIN_13;
@@ -126,11 +136,11 @@ int main(void)
 	/* USER CODE END RTOS_QUEUES */
 
 	/* Create the thread(s) */
-	/* creation of blinkTask01 */
-	blinkTask01Handle = osThreadNew(StartDefaultTask, NULL, &blinkTask01_attributes);
+	/* creation of statusTask */
+	statusTaskHandle = osThreadNew(StartStatusTask, NULL, &statusTask_attributes);
 
-	/* creation of blinkTask02 */
-	blinkTask02Handle = osThreadNew(StartTask02, NULL, &blinkTask02_attributes);
+	/* creation of I2CTask */
+	I2CTaskHandle = osThreadNew(StartCommsTask, NULL, &I2CTask_attributes);
 
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
@@ -195,6 +205,40 @@ void SystemClock_Config(void)
 }
 
 /**
+ * @brief I2C1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_I2C1_Init(void)
+{
+
+	/* USER CODE BEGIN I2C1_Init 0 */
+
+	/* USER CODE END I2C1_Init 0 */
+
+	/* USER CODE BEGIN I2C1_Init 1 */
+
+	/* USER CODE END I2C1_Init 1 */
+	hi2c1.Instance = I2C1;
+	hi2c1.Init.ClockSpeed = 50000;
+	hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+	hi2c1.Init.OwnAddress1 = 0;
+	hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+	hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+	hi2c1.Init.OwnAddress2 = 0;
+	hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+	if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN I2C1_Init 2 */
+
+	/* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
  * @brief GPIO Initialization Function
  * @param None
  * @retval None
@@ -206,6 +250,7 @@ static void MX_GPIO_Init(void)
 	/* GPIO Ports Clock Enable */
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	__HAL_RCC_GPIOH_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(LED_Pin_GPIO_Port, LED_Pin_Pin, GPIO_PIN_RESET);
@@ -220,45 +265,66 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/**
+ * @brief  Initializes the LCD screen
+ * @retval None
+ */
+void QAPASS_Init(void)
+{
+
+}
+
+/**
+ * @brief  Initializes the LCD screen
+ * @retval None
+ */
+void QAPASS_Write_Data(uint8_t data)
+{
+
+}
+
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartStatusTask */
 /**
- * @brief  Function for testing FreeRTOS on STM32F401, toggle every 400 ms
+ * @brief  Function implementing the statusTask thread.
  * @param  argument: Not used
  * @retval None
  */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_StartStatusTask */
+void StartStatusTask(void *argument)
 {
 	/* USER CODE BEGIN 5 */
-	/* Infinite loop */
 	for(;;)
 	{
-		osDelay(400);
+		// Currently only toggling the LED pin to show that the board is alive
+		osDelay(1000);
 		GPIOC -> ODR ^= GPIO_PIN_13;
 	}
 	/* USER CODE END 5 */
 }
 
-/* USER CODE BEGIN Header_StartTask02 */
+/* USER CODE BEGIN Header_StartCommsTask */
 /**
- * @brief  Function for testing FreeRTOS on STM32F401, toggle every 750 ms
+ * @brief Function for displaying the current status of the board.
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
+/* USER CODE END Header_StartCommsTask */
+void StartCommsTask(void *argument)
 {
-	/* USER CODE BEGIN StartTask02 */
-	/* Infinite loop */
+	/* USER CODE BEGIN StartCommsTask */
+
+	// I2C is currently running at 50khz so that the signals are easier to see
+	// on the oscilloscope
 	for(;;)
 	{
-		osDelay(750);
+		// Try to write to PCF8574T's register
+		osDelay(500);
 		GPIOC -> ODR ^= GPIO_PIN_13;
 	}
-	/* USER CODE END StartTask02 */
+	/* USER CODE END StartCommsTask */
 }
 
 /**

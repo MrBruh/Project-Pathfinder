@@ -13,4 +13,4 @@ progress tasks and notes for future reference.
 
 - [ ] Testing individual hardware components and sensors
 	- [x] Test basic FreeRTOS functionality
-	- [ ] Test UART control
+	- [ ] Test I2C control
