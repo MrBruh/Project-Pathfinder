@@ -13,4 +13,5 @@ progress tasks and notes for future reference.
 
 - [ ] Testing individual hardware components and sensors
 	- [x] Test basic FreeRTOS functionality
-	- [ ] Test I2C control
+	- [x] Test I2C/UART control
+	- [ ] Interface with GY-88
