@@ -34,7 +34,7 @@
 /* USER CODE BEGIN PD */
 
 // Default address of PCF8574T (No Address pins shorted to ground)
-#define PCF8574T_ADDRESS 0x4E << 1
+#define PCF8574T_ADDRESS 0x27 << 1
 
 /* USER CODE END PD */
 
@@ -271,7 +271,25 @@ static void MX_GPIO_Init(void)
  */
 void QAPASS_Init(void)
 {
+	osDelay(50);
+	QAPASS_Write_Data(0x30);
+	osDelay(5);
+	QAPASS_Write_Data(0x30);
+	osDelay(1);
+	QAPASS_Write_Data(0x30);
+	osDelay(10);
+	QAPASS_Write_Data(0x20);
+	osDelay(10);
 
+	QAPASS_Write_Data(0x28);
+	osDelay(1);
+	QAPASS_Write_Data(0x08);
+	osDelay(1);
+	QAPASS_Write_Data(0x01);
+	osDelay(2);
+	QAPASS_Write_Data(0x06);
+	osDelay(1);
+	QAPASS_Write_Data(0x0C);
 }
 
 /**
@@ -280,7 +298,17 @@ void QAPASS_Init(void)
  */
 void QAPASS_Write_Data(uint8_t data)
 {
+	// The LCD screen uses a 4-bit interface, so we split the data into 2 4-bit parts
+	uint8_t upper_data = data & 0xf0;
+	uint8_t lower_data = (data << 4) & 0xf0;
 
+	// Transmit as data part + command
+	uint8_t data_transmit[4];
+	data_transmit[0] = upper_data | 0x0D;
+	data_transmit[1] = upper_data | 0x09;
+	data_transmit[2] = lower_data | 0x0D;
+	data_transmit[3] = lower_data | 0x09;
+	HAL_I2C_Master_Transmit(&hi2c1, PCF8574T_ADDRESS, data_transmit, 4, 100);
 }
 
 
@@ -315,6 +343,7 @@ void StartStatusTask(void *argument)
 void StartCommsTask(void *argument)
 {
 	/* USER CODE BEGIN StartCommsTask */
+	QAPASS_Init();
 
 	// I2C is currently running at 50khz so that the signals are easier to see
 	// on the oscilloscope
@@ -322,7 +351,7 @@ void StartCommsTask(void *argument)
 	{
 		// Try to write to PCF8574T's register
 		osDelay(500);
-		GPIOC -> ODR ^= GPIO_PIN_13;
+		QAPASS_Write_Data(0x30);
 	}
 	/* USER CODE END StartCommsTask */
 }
