@@ -170,9 +170,27 @@ void StartCommsTask(void *argument)
 			continue;
 		}
 		// Print gyro data if successful
+		{
 		char buffer[50];
 		sprintf(buffer, "g_x: %d, g_y: %d, g_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
 		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+		}
+
+		status = MPU6050_Read_Acceleration(gyro_data);
+		if (status != HAL_OK)
+		{
+			char buffer[50];
+			sprintf(buffer, "reading from accel failed\n\rs: %02x\n\r", status);
+			HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+			continue;
+		}
+		// Print gyro data if successful
+		{
+		char buffer[50];
+		sprintf(buffer, "a_x: %d, a_y: %d, a_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
+		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+		}
+
 	}
 	/* USER CODE END StartCommsTask */
 }

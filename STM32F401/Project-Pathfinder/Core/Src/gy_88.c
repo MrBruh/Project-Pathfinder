@@ -74,7 +74,7 @@ HAL_StatusTypeDef MPU6050_Read_Acceleration(int16_t *accel_data)
 
 	// Get acceleration data from the MPU6050
 	status = HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG,
-							  1, &mpu6050_buf, 1, 100);
+							  1, &mpu6050_buf, 6, 100);
 	if (status != HAL_OK)
 		return status;
 
@@ -103,8 +103,10 @@ HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data)
 	uint8_t mpu6050_buf[6];
 
 	// Get gyroscopic data from the MPU6050
+	// The registers XOUT_H to ZOUT_L are all next to each other, so we can just read 6
+	// consecutive bytes starting from XOUT_H
 	status = HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, GYRO_XOUT_H_REG,
-							  1, &mpu6050_buf, 1, 100);
+							  1, &mpu6050_buf, 6, 100);
 	if (status != HAL_OK)
 		return status;
 
