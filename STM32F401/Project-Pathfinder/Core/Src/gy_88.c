@@ -8,6 +8,8 @@
 
 #include "gy_88.h"
 
+Gyro_PositionTypeDef gyro_pos;
+
 /**
  * @brief  Verifies that there is an MPU6050 connected to the main i2c line and configures
  * it if there is one.
@@ -134,4 +136,5 @@ HAL_StatusTypeDef MPU6050_Update_Gyro_Pos()
 {
 	int16_t gyro_data[3];
 	HAL_StatusTypeDef status = MPU6050_Read_Gyro(gyro_data);
+	return status;
 }

@@ -37,7 +37,7 @@ typedef struct Gyro_PositionTypeDef
 	int16_t x;	// Pitch
 	int16_t y;	// Roll
 	int16_t z;	// Yaw
-};
+}Gyro_PositionTypeDef;
 
 extern Gyro_PositionTypeDef gyro_pos;
 
