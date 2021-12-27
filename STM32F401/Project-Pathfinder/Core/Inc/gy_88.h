@@ -12,8 +12,7 @@
 extern "C" {
 #endif
 
-#include <string.h> /* for debug messages */
-#include <stdio.h> /* for sprintf */
+#include "uart_logging.h"
 #include <stdint.h> /* for int16_t */
 #include "stm32f4xx_hal.h" /* for HAL_StatusTypeDef */
 

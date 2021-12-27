@@ -31,6 +31,7 @@
 
 #include <string.h> /* for debug messages */
 #include <stdio.h> /* for sprintf */
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -152,11 +153,7 @@ void StartCommsTask(void *argument)
 
 	HAL_StatusTypeDef status = MPU6050_Init();
 	if (status != HAL_OK)
-	{
-		char buffer[40];
-		sprintf(buffer, "gy-88 init failed\n\rs: %02x\n\r", status);
-		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
-	}
+		UART_Log_Status("gy-88 init failed\n\rs: ", status);
 
 	int16_t gyro_data[3];
 	for(;;)
@@ -165,15 +162,14 @@ void StartCommsTask(void *argument)
 		status = MPU6050_Read_Gyro(gyro_data);
 		if (status != HAL_OK)
 		{
-			char buffer[50];
-			sprintf(buffer, "reading from gyro failed\n\rs: %02x\n\r", status);
-			HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+			UART_Log_Status("reading from gyro failed\n\rs: ", status);
 			continue;
 		}
+
 		// Print gyro data if successful
 		char buffer[50];
 		sprintf(buffer, "g_x: %d, g_y: %d, g_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
-		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+		UART_Log_Debug(buffer);
 	}
 	/* USER CODE END StartCommsTask */
 }

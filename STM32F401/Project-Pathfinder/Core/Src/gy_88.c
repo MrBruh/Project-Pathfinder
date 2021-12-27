@@ -49,13 +49,8 @@ HAL_StatusTypeDef MPU6050_Init(void)
 			return status;
 
 	}
-	else
-	{
-		// Create and send debug message
-		char buffer[40];
-		sprintf(buffer, "gy-88 mem check failed\n\rc: %02x\n\r", _check);
-		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
-	}
+	else	// Create and send a debug message
+		UART_Log_Debug_U8("gy-88 mem check failed\n\rc: ", _check);
 
 	return status;
 }
