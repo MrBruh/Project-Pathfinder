@@ -158,7 +158,7 @@ void StartCommsTask(void *argument)
 		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
 	}
 
-	char test_data = 'c';
+	int16_t gyro_data[3];
 	for(;;)
 	{
 		osDelay(1000);

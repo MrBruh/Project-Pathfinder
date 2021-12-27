@@ -116,9 +116,9 @@ HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data)
 	int16_t g_z_raw = (int16_t)(mpu6050_buf[4] << 8 | mpu6050_buf[5]);
 
 	// Write the values to gyro_data
-	gyro_data[0] = g_x_raw/16384.0;
-	gyro_data[1] = g_y_raw/16384.0;
-	gyro_data[2] = g_z_raw/16384.0;
+	gyro_data[0] = g_x_raw/131.0;
+	gyro_data[1] = g_y_raw/131.0;
+	gyro_data[2] = g_z_raw/131.0;
 
 	return status;
 }
