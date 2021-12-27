@@ -158,22 +158,11 @@ void StartCommsTask(void *argument)
 		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
 	}
 
-	int gyro_data[3];
+	char test_data = 'c';
 	for(;;)
 	{
-		__HAL_RCC_I2C1_CLK_DISABLE();
-	   I2C1->CR1 |= I2C_CR1_SWRST;
-	   I2C1->CR1 &= ~I2C_CR1_SWRST;
-	   __HAL_RCC_I2C1_CLK_ENABLE();
-		osDelay(500);
-		HAL_StatusTypeDef status = MPU6050_Init();
-		if (status != HAL_OK)
-		{
-			char buffer[40];
-			sprintf(buffer, "gy-88 init failed\n\rs: %02x\n\r", status);
-			HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
-		}
-		/*status = MPU6050_Read_Gyro(gyro_data);
+		osDelay(1000);
+		status = MPU6050_Read_Gyro(gyro_data);
 		if (status != HAL_OK)
 		{
 			char buffer[50];
@@ -182,27 +171,9 @@ void StartCommsTask(void *argument)
 			continue;
 		}
 		// Print gyro data if successful
-		{
 		char buffer[50];
 		sprintf(buffer, "g_x: %d, g_y: %d, g_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
 		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
-		}
-
-		status = MPU6050_Read_Acceleration(gyro_data);
-		if (status != HAL_OK)
-		{
-			char buffer[50];
-			sprintf(buffer, "reading from accel failed\n\rs: %02x\n\r", status);
-			HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
-			continue;
-		}
-		// Print gyro data if successful
-		{
-		char buffer[50];
-		sprintf(buffer, "a_x: %d, a_y: %d, a_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
-		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
-		}*/
-
 	}
 	/* USER CODE END StartCommsTask */
 }
