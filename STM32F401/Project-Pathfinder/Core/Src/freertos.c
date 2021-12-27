@@ -149,6 +149,7 @@ void StartStatusTask(void *argument)
 void StartCommsTask(void *argument)
 {
 	/* USER CODE BEGIN StartCommsTask */
+
 	HAL_StatusTypeDef status = MPU6050_Init();
 	if (status != HAL_OK)
 	{
@@ -160,8 +161,19 @@ void StartCommsTask(void *argument)
 	int gyro_data[3];
 	for(;;)
 	{
-		osDelay(1000);
-		status = MPU6050_Read_Gyro(gyro_data);
+		__HAL_RCC_I2C1_CLK_DISABLE();
+	   I2C1->CR1 |= I2C_CR1_SWRST;
+	   I2C1->CR1 &= ~I2C_CR1_SWRST;
+	   __HAL_RCC_I2C1_CLK_ENABLE();
+		osDelay(500);
+		HAL_StatusTypeDef status = MPU6050_Init();
+		if (status != HAL_OK)
+		{
+			char buffer[40];
+			sprintf(buffer, "gy-88 init failed\n\rs: %02x\n\r", status);
+			HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+		}
+		/*status = MPU6050_Read_Gyro(gyro_data);
 		if (status != HAL_OK)
 		{
 			char buffer[50];
@@ -189,7 +201,7 @@ void StartCommsTask(void *argument)
 		char buffer[50];
 		sprintf(buffer, "a_x: %d, a_y: %d, a_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
 		HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
-		}
+		}*/
 
 	}
 	/* USER CODE END StartCommsTask */
