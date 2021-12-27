@@ -31,9 +31,20 @@ extern "C" {
 #define PWR_MGMT_REG 0x6B
 #define WHO_AM_I_REG 0x75
 
+// For keep track of current orientation
+typedef struct Gyro_PositionTypeDef
+{
+	int16_t x;	// Pitch
+	int16_t y;	// Roll
+	int16_t z;	// Yaw
+};
+
+extern Gyro_PositionTypeDef gyro_pos;
+
 HAL_StatusTypeDef MPU6050_Init(void);
 HAL_StatusTypeDef MPU6050_Read_Acceleration(int16_t *accel_data);
 HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data);
+HAL_StatusTypeDef MPU6050_Update_Gyro_Pos(void);
 
 #ifdef __cplusplus
 }

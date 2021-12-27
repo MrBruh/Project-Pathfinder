@@ -19,6 +19,11 @@ HAL_StatusTypeDef MPU6050_Init(void)
 	HAL_StatusTypeDef status = HAL_OK;
 	uint8_t _check, _data;
 
+	// Initialize the gyro_pos struct
+	gyro_pos.x = 0;
+	gyro_pos.y = 0;
+	gyro_pos.z = 0;
+
 	// Check the MPU6050's ID (Should be 0x68)
 	status = HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, WHO_AM_I_REG, 1, &_check, 1, 100);
 	if (status != HAL_OK)
@@ -57,7 +62,7 @@ HAL_StatusTypeDef MPU6050_Init(void)
 
 /**
  * @brief  Reads the acceleration values in the x, y, and z dimensions of the accelerometer.
- * @note   Fails if the MPU6050 is not connected or configured properly
+ * @note   Fails if the MPU6050 is not connected or configured as expected
  * @param  accel_data[3]: The buffer where the acceleration values x,y,z are written to in that
  * order.
  * @retval status: The HAL status of all the read and writes to the HAL i2c line.
@@ -88,7 +93,7 @@ HAL_StatusTypeDef MPU6050_Read_Acceleration(int16_t *accel_data)
 
 /**
  * @brief  Reads the gyro values in the x, y, and z dimensions of the gyroscope.
- * @note   Fails if the MPU6050 is not connected or configured properly
+ * @note   Fails if the MPU6050 is not connected or configured as expected
  * @param  gyro_data[3]: The buffer where the gyro values x,y,z are written to in that order.
  * @retval status: The HAL status of all the read and writes to the HAL i2c line.
  */
@@ -116,4 +121,17 @@ HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data)
 	gyro_data[2] = g_z_raw/131.0;
 
 	return status;
+}
+
+/**
+ * @brief  Reads the gyro values in the x, y, and z dimensions of the gyroscope.
+ * @note   Fails if the MPU6050 is not connected or configured as expected.
+ * For more accurate measurements, this function needs to be called very rapidly, otherwise very
+ * sudden jerks can throw off the measurement
+ * @retval status: The HAL status of all the read and writes to the HAL i2c line.
+ */
+HAL_StatusTypeDef MPU6050_Update_Gyro_Pos()
+{
+	int16_t gyro_data[3];
+	HAL_StatusTypeDef status = MPU6050_Read_Gyro(gyro_data);
 }
