@@ -34,9 +34,9 @@ extern "C" {
 // For keep track of current orientation
 typedef struct Gyro_PositionTypeDef
 {
-	int16_t x;	// Pitch
-	int16_t y;	// Roll
-	int16_t z;	// Yaw
+	int64_t x;	// Pitch
+	int64_t y;	// Roll
+	int64_t z;	// Yaw
 }Gyro_PositionTypeDef;
 
 extern Gyro_PositionTypeDef gyro_pos;
@@ -45,6 +45,7 @@ HAL_StatusTypeDef MPU6050_Init(void);
 HAL_StatusTypeDef MPU6050_Read_Acceleration(int16_t *accel_data);
 HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data);
 HAL_StatusTypeDef MPU6050_Update_Gyro_Pos(void);
+void MPU6050_Reset_Gyro_Timer(uint32_t time);
 
 #ifdef __cplusplus
 }

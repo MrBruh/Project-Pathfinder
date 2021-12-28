@@ -15,6 +15,7 @@ progress tasks and notes for future reference.
 
 - [ ] Move away from using STM32CubeIDE to something like Segger Embedded Studio
 - [ ] Add more features to logging and/or look into how proper logging is done 
+- [ ] Reduce the number of magic numbers in the code
 
 ### In Progress
 
@@ -22,7 +23,7 @@ progress tasks and notes for future reference.
 	- [x] Test basic FreeRTOS functionality
 	- [x] Test I2C/UART control
 	- [x] Interface with GY-88
-	- [ ] Get current position using the MPU6050
+	- [x] Get current position using the MPU6050
 	- [ ] Interface with the AS5600 encoder
 	- [ ] Get current speed using the AS5600
 

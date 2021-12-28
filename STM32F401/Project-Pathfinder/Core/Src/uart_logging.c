@@ -18,8 +18,8 @@ void UART_Log_Status(const char *msg, HAL_StatusTypeDef status)
 {
 #ifdef UART_LOGGING_STATUS
 	char *buffer = malloc(sizeof(char) * strlen(msg) + 10);
-	buffer += sprintf(buffer, msg);
-	buffer += sprintf(buffer, "%02x\n\r", status);
+	sprintf(buffer, msg);
+	sprintf(buffer + strlen(buffer), "%02x\n\r", status);
 	HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
 	free(buffer);
 #endif
@@ -49,8 +49,19 @@ void UART_Log_Debug_U8(const char *msg, const uint8_t var)
 {
 #ifdef UART_LOGGING_STATUS
 	char *buffer = malloc(sizeof(char) * strlen(msg) + 10);
-	buffer += sprintf(buffer, msg);
-	buffer += sprintf(buffer, "%02x\n\r", var);
+	sprintf(buffer, msg);
+	sprintf(buffer + strlen(buffer), "%02x\n\r", var);
+	HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
+	free(buffer);
+#endif
+}
+
+void UART_Log_Debug_U32(const char *msg, const int32_t var)
+{
+#ifdef UART_LOGGING_STATUS
+	char *buffer = malloc(sizeof(char) * strlen(msg) + 50);
+	sprintf(buffer, msg);
+	sprintf(buffer + strlen(buffer), "%d", var);
 	HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 100);
 	free(buffer);
 #endif

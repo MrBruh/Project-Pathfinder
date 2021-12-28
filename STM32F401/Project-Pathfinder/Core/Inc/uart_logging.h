@@ -28,6 +28,7 @@ void UART_Log_Status(const char *msg, HAL_StatusTypeDef status);
 // General debug messages
 void UART_Log_Debug(const char *msg);
 void UART_Log_Debug_U8(const char *msg, const uint8_t var);
+void UART_Log_Debug_U32(const char *msg, const int32_t var);
 
 #ifdef __cplusplus
 }

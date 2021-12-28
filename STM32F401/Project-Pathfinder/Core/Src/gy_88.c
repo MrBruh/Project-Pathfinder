@@ -8,7 +8,11 @@
 
 #include "gy_88.h"
 
+// Stores the current orientation of the MPU6050
 Gyro_PositionTypeDef gyro_pos;
+
+// Last time measured since last MPU6050 reading
+uint32_t gyro_last_timer_count;
 
 /**
  * @brief  Verifies that there is an MPU6050 connected to the main i2c line and configures
@@ -126,7 +130,7 @@ HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data)
 }
 
 /**
- * @brief  Reads the gyro values in the x, y, and z dimensions of the gyroscope.
+ * @brief  Updates the current orientation of the device based on
  * @note   Fails if the MPU6050 is not connected or configured as expected.
  * For more accurate measurements, this function needs to be called very rapidly, otherwise very
  * sudden jerks can throw off the measurement
@@ -135,6 +139,30 @@ HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data)
 HAL_StatusTypeDef MPU6050_Update_Gyro_Pos()
 {
 	int16_t gyro_data[3];
+
+	// Get the timer count right before reading the memory as that will have less error than
+	// getting the time after the function call
+	uint32_t gyro_current_timer_count = TIM5->CNT;
 	HAL_StatusTypeDef status = MPU6050_Read_Gyro(gyro_data);
+
+	uint32_t delta_count = gyro_current_timer_count - gyro_last_timer_count;
+	delta_count /= 100000;
+
+	gyro_pos.x += gyro_data[0] * delta_count;
+	gyro_pos.y += gyro_data[1] * delta_count;
+	gyro_pos.z += gyro_data[2] * delta_count;
+
+	gyro_last_timer_count = TIM5->CNT;
+
 	return status;
+}
+
+/**
+ * @brief  Resets the gyro timer used for getting current orientation
+ * @retval None
+ */
+
+void MPU6050_Reset_Gyro_Timer(uint32_t time)
+{
+	gyro_last_timer_count = time;
 }

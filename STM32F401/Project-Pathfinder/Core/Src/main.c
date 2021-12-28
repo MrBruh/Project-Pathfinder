@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -53,7 +54,7 @@
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-
+void Enable_DWT(void);	// Enable the DWT for accurate time measurement
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -90,10 +91,14 @@ int main(void)
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_I2C1_Init();
+	MX_TIM5_Init();
 	MX_USART1_UART_Init();
 	/* USER CODE BEGIN 2 */
 	// Set initial state of the LED to off
 	GPIOC -> ODR |= GPIO_PIN_13;
+	// Enable DWT
+	//Enable_DWT();
+	HAL_TIM_Base_Start(&htim5);
 	/* USER CODE END 2 */
 
 	/* Init scheduler */
@@ -160,7 +165,16 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-
+/**
+ * @brief  Enables the DWT counter for precise time measurement
+ * @retval None
+ */
+void Enable_DWT(void)
+{
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DWT->CYCCNT = 0;
+	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
 
 /* USER CODE END 4 */
 

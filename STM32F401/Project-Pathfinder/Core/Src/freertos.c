@@ -67,6 +67,13 @@ const osThreadAttr_t commsTask_attributes = {
 		.stack_size = 128 * 4,
 		.priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for readSensorGyro */
+osThreadId_t readSensorGyroHandle;
+const osThreadAttr_t readSensorGyro_attributes = {
+		.name = "readSensorGyro",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityAboveNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -75,6 +82,7 @@ const osThreadAttr_t commsTask_attributes = {
 
 void StartStatusTask(void *argument);
 void StartCommsTask(void *argument);
+void StartReadSensorGyro(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -110,6 +118,9 @@ void MX_FREERTOS_Init(void) {
 
 	/* creation of commsTask */
 	commsTaskHandle = osThreadNew(StartCommsTask, NULL, &commsTask_attributes);
+
+	/* creation of readSensorGyro */
+	readSensorGyroHandle = osThreadNew(StartReadSensorGyro, NULL, &readSensorGyro_attributes);
 
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
@@ -151,6 +162,7 @@ void StartCommsTask(void *argument)
 {
 	/* USER CODE BEGIN StartCommsTask */
 
+	UART_Log_Debug("gy-88 init\n\r");
 	HAL_StatusTypeDef status = MPU6050_Init();
 	if (status != HAL_OK)
 		UART_Log_Status("gy-88 init failed\n\rs: ", status);
@@ -159,7 +171,7 @@ void StartCommsTask(void *argument)
 	for(;;)
 	{
 		osDelay(1000);
-		status = MPU6050_Read_Gyro(gyro_data);
+		/*status = MPU6050_Read_Gyro(gyro_data);
 		if (status != HAL_OK)
 		{
 			UART_Log_Status("reading from gyro failed\n\rs: ", status);
@@ -169,9 +181,36 @@ void StartCommsTask(void *argument)
 		// Print gyro data if successful
 		char buffer[50];
 		sprintf(buffer, "g_x: %d, g_y: %d, g_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
-		UART_Log_Debug(buffer);
+		UART_Log_Debug(buffer);*/
+		int64_t temp = gyro_pos.z;
+		UART_Log_Debug_U32("g_x: ", gyro_pos.x);
+		UART_Log_Debug_U32(" g_y: ", gyro_pos.y);
+		UART_Log_Debug_U32(" g_z: ", (int32_t)(temp) /754 );
+		UART_Log_Debug("\n\r");
 	}
 	/* USER CODE END StartCommsTask */
+}
+
+/* USER CODE BEGIN Header_StartReadSensorGyro */
+/**
+ * @brief Function implementing the readSensorGyro thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartReadSensorGyro */
+void StartReadSensorGyro(void *argument)
+{
+	/* USER CODE BEGIN StartReadSensorGyro */
+	osDelay(1000);
+	// Begin the timer for the gyro readings
+	MPU6050_Reset_Gyro_Timer(TIM5->CNT);
+	// Update the gyro readings every 10 milliseconds
+	for(;;)
+	{
+		MPU6050_Update_Gyro_Pos();
+		osDelay(10);
+	}
+	/* USER CODE END StartReadSensorGyro */
 }
 
 /* Private application code --------------------------------------------------*/
