@@ -93,11 +93,14 @@ int main(void)
 	MX_I2C1_Init();
 	MX_TIM5_Init();
 	MX_USART1_UART_Init();
+	MX_TIM2_Init();
 	/* USER CODE BEGIN 2 */
 	// Set initial state of the LED to off
 	GPIOC -> ODR |= GPIO_PIN_13;
 	// Enable DWT
 	//Enable_DWT();
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 	HAL_TIM_Base_Start(&htim5);
 	/* USER CODE END 2 */
 

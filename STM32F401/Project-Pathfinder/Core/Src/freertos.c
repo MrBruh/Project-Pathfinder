@@ -72,7 +72,7 @@ osThreadId_t readSensorGyroHandle;
 const osThreadAttr_t readSensorGyro_attributes = {
 		.name = "readSensorGyro",
 		.stack_size = 128 * 4,
-		.priority = (osPriority_t) osPriorityAboveNormal,
+		.priority = (osPriority_t) osPriorityBelowNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -167,25 +167,17 @@ void StartCommsTask(void *argument)
 	if (status != HAL_OK)
 		UART_Log_Status("gy-88 init failed\n\rs: ", status);
 
-	int16_t gyro_data[3];
+	// Start the PWM generation at 10%
+	int speed = 65535 * 0.1;
+	TIM2->CCR1 = speed;
+
 	for(;;)
 	{
 		osDelay(1000);
-		/*status = MPU6050_Read_Gyro(gyro_data);
-		if (status != HAL_OK)
-		{
-			UART_Log_Status("reading from gyro failed\n\rs: ", status);
-			continue;
-		}
-
-		// Print gyro data if successful
-		char buffer[50];
-		sprintf(buffer, "g_x: %d, g_y: %d, g_z: %d\n\r", gyro_data[0], gyro_data[1], gyro_data[2]);
-		UART_Log_Debug(buffer);*/
-		int64_t temp = gyro_pos.z;
-		UART_Log_Debug_U32("g_x: ", gyro_pos.x);
-		UART_Log_Debug_U32(" g_y: ", gyro_pos.y);
-		UART_Log_Debug_U32(" g_z: ", (int32_t)(temp) /754 );
+		UART_Log_Debug_U32("g_x: ", (int32_t)(gyro_pos.x) /754);
+		UART_Log_Debug_U32(" g_y: ", (int32_t)(gyro_pos.y) /754);
+		UART_Log_Debug_U32(" g_z: ", (int32_t)(gyro_pos.z) /754 );
+		UART_Log_Debug_U32(" speed: ", speed );
 		UART_Log_Debug("\n\r");
 	}
 	/* USER CODE END StartCommsTask */

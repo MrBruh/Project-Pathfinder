@@ -25,6 +25,7 @@ progress tasks and notes for future reference.
 	- [x] Interface with GY-88
 	- [x] Get current position using the MPU6050
 	- [ ] Interface with the AS5600 encoder
+		- [ ] Power a motor with PWM
 	- [ ] Get current speed using the AS5600
 
 ### Done
