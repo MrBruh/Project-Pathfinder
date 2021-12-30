@@ -168,18 +168,24 @@ void StartCommsTask(void *argument)
 	osDelay(100);
 
 	// Start the PWM generation at 5%
-	int speed = 65535 * 0.05;
+	int speed = 65535 * 0.5;
 	TIM2->CCR1 = speed;
 
 	// Begin the AS5600 encoder
 	UART_Log_Debug("encoder init\n\r");
 	AS5600_Init();
 	AS5600_Reset_Encoder_Timer(TIM5->CNT);
-	HAL_StatusTypeDef status = AS5600_Update_Encoder_Range(5000);
+	HAL_StatusTypeDef status = AS5600_Update_Encoder_Range(500);
 	if (status != HAL_OK)
 		UART_Log_Status("encoder init failed\n\rs: ", status);
 	else
 		encoder_started = 1;
+
+	for (int i = 0; i < 500; i++)
+	{
+		UART_Log_Debug_32("e_value: ", encoder_debug_values[i]);
+		UART_Log_Debug("\n\r");
+	}
 
 	UART_Log_Debug("gy-88 init\n\r");
 	status = MPU6050_Init();
@@ -199,8 +205,8 @@ void StartCommsTask(void *argument)
 
 		if(encoder_started == 1)
 		{
-			UART_Log_Debug_32("encoder min: ", encoder_range[0]);
-			UART_Log_Debug_32("encoder max: ", encoder_range[1]);
+			UART_Log_Debug_32(" encoder min: ", encoder_range[0]);
+			UART_Log_Debug_32(" encoder max: ", encoder_range[1]);
 		}
 
 		UART_Log_Debug("\n\r");

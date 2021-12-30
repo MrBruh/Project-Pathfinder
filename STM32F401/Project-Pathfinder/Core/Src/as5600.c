@@ -11,6 +11,10 @@
 uint32_t last_timer_count;
 
 uint16_t encoder_range[2];
+uint16_t encoder_debug_values[500];
+uint16_t encoder_delta = 0;
+
+uint16_t encoder_previous_angle;
 
 enum encoder_state_enum
 {
@@ -26,9 +30,11 @@ enum encoder_state_enum
  */
 void AS5600_Init(void)
 {
-	encoder_range[0] = 5001;// Largest uint value
-	encoder_range[0] = 0;	// Smallest uint value
+	encoder_range[0] = -1;// Largest uint value
+	encoder_range[1] = 0;	// Smallest uint value
 	encoder_state = AS5600_INITIALIZED;
+
+	AS5600_Get_Raw_Angle(&encoder_previous_angle);
 }
 
 /**
@@ -89,6 +95,7 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Range(int cycles)
 	uint16_t encoder_data;
 	HAL_StatusTypeDef status = HAL_OK;
 
+	int i = 0;
 	// Update the encoder range cycles amount of times
 	for (int current_cycles = 0; current_cycles < cycles; current_cycles++)
 	{
@@ -109,6 +116,10 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Range(int cycles)
 			encoder_range[1] = encoder_data;
 		else if (encoder_data < encoder_range[0])
 			encoder_range[0] = encoder_data;
+
+		// Add it to the debug list
+		encoder_debug_values[i] = encoder_data;
+		i++;
 	}
 
 	encoder_state = AS5600_CALIBRATED;

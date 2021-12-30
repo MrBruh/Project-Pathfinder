@@ -19,6 +19,8 @@
 #include "i2c.h"
 
 extern uint16_t encoder_range[2];
+extern uint16_t encoder_debug_values[500];
+extern uint16_t encoder_delta;
 
 void AS5600_Init(void);
 HAL_StatusTypeDef AS5600_Get_Raw_Angle(uint16_t *raw_angle);
