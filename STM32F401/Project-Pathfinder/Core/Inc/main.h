@@ -41,7 +41,8 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+#define TIM5_FREQUENCY 84000000 // Frequency of TIM5
+#define TIM5_COUNTS_PER_MICROSECOND 84
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

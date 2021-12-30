@@ -56,7 +56,7 @@ void UART_Log_Debug_U8(const char *msg, const uint8_t var)
 #endif
 }
 
-void UART_Log_Debug_U32(const char *msg, const int32_t var)
+void UART_Log_Debug_32(const char *msg, const int32_t var)
 {
 #ifdef UART_LOGGING_STATUS
 	char *buffer = malloc(sizeof(char) * strlen(msg) + 50);

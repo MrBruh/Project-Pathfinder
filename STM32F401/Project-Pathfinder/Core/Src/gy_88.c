@@ -14,6 +14,13 @@ Gyro_PositionTypeDef gyro_pos;
 // Last time measured since last MPU6050 reading
 uint32_t gyro_last_timer_count;
 
+// If the MPU6050 has been initialized
+enum gyro_state_enum
+{
+	GYRO_UNINITIALIZED,
+	GYRO_INITIALIZED
+} gyro_state = GYRO_UNINITIALIZED;
+
 /**
  * @brief  Verifies that there is an MPU6050 connected to the main i2c line and configures
  * it if there is one.
@@ -58,6 +65,8 @@ HAL_StatusTypeDef MPU6050_Init(void)
 		status = HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, GYRO_CONFIG_REG, 1, &_data, 1, 100);
 		if (status != HAL_OK)
 			return status;
+
+		gyro_state = GYRO_INITIALIZED;
 
 	}
 	else	// Create and send a debug message
@@ -138,21 +147,27 @@ HAL_StatusTypeDef MPU6050_Read_Gyro(int16_t *gyro_data)
  */
 HAL_StatusTypeDef MPU6050_Update_Gyro_Pos()
 {
-	int16_t gyro_data[3];
+	HAL_StatusTypeDef status = HAL_ERROR;
 
-	// Get the timer count right before reading the memory as that will have less error than
-	// getting the time after the function call
-	uint32_t gyro_current_timer_count = TIM5->CNT;
-	HAL_StatusTypeDef status = MPU6050_Read_Gyro(gyro_data);
+	// Only try to read if the MPU6050 is initialized
+	if (gyro_state == GYRO_INITIALIZED)
+	{
+		int16_t gyro_data[3];
 
-	uint32_t delta_count = gyro_current_timer_count - gyro_last_timer_count;
-	delta_count /= 100000;
+		// Get the timer count right before reading the memory as that will have less error than
+		// getting the time after the function call
+		uint32_t gyro_current_timer_count = TIM5->CNT;
+		status = MPU6050_Read_Gyro(gyro_data);
 
-	gyro_pos.x += gyro_data[0] * delta_count;
-	gyro_pos.y += gyro_data[1] * delta_count;
-	gyro_pos.z += gyro_data[2] * delta_count;
+		uint32_t delta_count = gyro_current_timer_count - gyro_last_timer_count;
+		delta_count /= 100000;
 
-	gyro_last_timer_count = TIM5->CNT;
+		gyro_pos.x += gyro_data[0] * delta_count;
+		gyro_pos.y += gyro_data[1] * delta_count;
+		gyro_pos.z += gyro_data[2] * delta_count;
+
+		gyro_last_timer_count = TIM5->CNT;
+	}
 
 	return status;
 }
@@ -161,7 +176,6 @@ HAL_StatusTypeDef MPU6050_Update_Gyro_Pos()
  * @brief  Resets the gyro timer used for getting current orientation
  * @retval None
  */
-
 void MPU6050_Reset_Gyro_Timer(uint32_t time)
 {
 	gyro_last_timer_count = time;

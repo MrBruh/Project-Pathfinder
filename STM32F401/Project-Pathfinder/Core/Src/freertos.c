@@ -28,6 +28,7 @@
 #include "i2c.h"
 #include "usart.h"
 #include "gy_88.h"
+#include "as5600.h"
 
 #include <string.h> /* for debug messages */
 #include <stdio.h> /* for sprintf */
@@ -51,7 +52,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+int gyro_started = 0;
+int encoder_started = 0;
 /* USER CODE END Variables */
 /* Definitions for statusTask */
 osThreadId_t statusTaskHandle;
@@ -162,22 +164,45 @@ void StartCommsTask(void *argument)
 {
 	/* USER CODE BEGIN StartCommsTask */
 
+	// Delay to allow time for hardware to power up
+	osDelay(100);
+
+	// Start the PWM generation at 5%
+	int speed = 65535 * 0.05;
+	TIM2->CCR1 = speed;
+
+	// Begin the AS5600 encoder
+	UART_Log_Debug("encoder init\n\r");
+	AS5600_Init();
+	AS5600_Reset_Encoder_Timer(TIM5->CNT);
+	HAL_StatusTypeDef status = AS5600_Update_Encoder_Range(5000);
+	if (status != HAL_OK)
+		UART_Log_Status("encoder init failed\n\rs: ", status);
+	else
+		encoder_started = 1;
+
 	UART_Log_Debug("gy-88 init\n\r");
-	HAL_StatusTypeDef status = MPU6050_Init();
+	status = MPU6050_Init();
 	if (status != HAL_OK)
 		UART_Log_Status("gy-88 init failed\n\rs: ", status);
-
-	// Start the PWM generation at 10%
-	int speed = 65535 * 0.1;
-	TIM2->CCR1 = speed;
+	else
+		gyro_started = 1;
 
 	for(;;)
 	{
 		osDelay(1000);
-		UART_Log_Debug_U32("g_x: ", (int32_t)(gyro_pos.x) /754);
-		UART_Log_Debug_U32(" g_y: ", (int32_t)(gyro_pos.y) /754);
-		UART_Log_Debug_U32(" g_z: ", (int32_t)(gyro_pos.z) /754 );
-		UART_Log_Debug_U32(" speed: ", speed );
+
+		// Print debug information
+		UART_Log_Debug_32("g_x: ", (int32_t)(gyro_pos.x) /754);
+		UART_Log_Debug_32(" g_y: ", (int32_t)(gyro_pos.y) /754);
+		UART_Log_Debug_32(" g_z: ", (int32_t)(gyro_pos.z) /754 );
+
+		if(encoder_started == 1)
+		{
+			UART_Log_Debug_32("encoder min: ", encoder_range[0]);
+			UART_Log_Debug_32("encoder max: ", encoder_range[1]);
+		}
+
 		UART_Log_Debug("\n\r");
 	}
 	/* USER CODE END StartCommsTask */
@@ -194,6 +219,7 @@ void StartReadSensorGyro(void *argument)
 {
 	/* USER CODE BEGIN StartReadSensorGyro */
 	osDelay(1000);
+
 	// Begin the timer for the gyro readings
 	MPU6050_Reset_Gyro_Timer(TIM5->CNT);
 	// Update the gyro readings every 10 milliseconds

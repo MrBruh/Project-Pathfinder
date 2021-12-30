@@ -17,7 +17,6 @@ extern "C" {
 #include "stm32f4xx_hal.h" /* for HAL_StatusTypeDef */
 
 #include "i2c.h"
-#include "usart.h"
 
 #define MPU6050_ADDR 0xD0
 
