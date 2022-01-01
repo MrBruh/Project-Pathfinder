@@ -167,25 +167,30 @@ void StartCommsTask(void *argument)
 	// Delay to allow time for hardware to power up
 	osDelay(100);
 
-	// Start the PWM generation at 5%
-	int speed = 65535 * 0.5;
+	// Start the PWM generation at 7% for calibration
+	int speed = 65535 * 0.07;
 	TIM2->CCR1 = speed;
 
 	// Begin the AS5600 encoder
 	UART_Log_Debug("encoder init\n\r");
-	AS5600_Init();
+	AS5600_Init(TIM5);
 	AS5600_Reset_Encoder_Timer(TIM5->CNT);
-	HAL_StatusTypeDef status = AS5600_Update_Encoder_Range(500);
+	HAL_StatusTypeDef status = AS5600_Update_Encoder_Range(2000);
 	if (status != HAL_OK)
 		UART_Log_Status("encoder init failed\n\rs: ", status);
 	else
+	{
 		encoder_started = 1;
+		// Set the PWM generation at 20% for testing speed
+		speed = 65535 * 0.07;
+		TIM2->CCR1 = speed;
+	}
 
-	for (int i = 0; i < 500; i++)
+	/*for (int i = 0; i < 500; i++)
 	{
 		UART_Log_Debug_32("e_value: ", encoder_debug_values[i]);
 		UART_Log_Debug("\n\r");
-	}
+	}*/
 
 	UART_Log_Debug("gy-88 init\n\r");
 	status = MPU6050_Init();
@@ -199,14 +204,19 @@ void StartCommsTask(void *argument)
 		osDelay(1000);
 
 		// Print debug information
-		UART_Log_Debug_32("g_x: ", (int32_t)(gyro_pos.x) /754);
-		UART_Log_Debug_32(" g_y: ", (int32_t)(gyro_pos.y) /754);
-		UART_Log_Debug_32(" g_z: ", (int32_t)(gyro_pos.z) /754 );
+		if (gyro_started == 1)
+		{
+			UART_Log_Debug_32("g_x: ", (int32_t)(gyro_pos.x) /754);
+			UART_Log_Debug_32(" g_y: ", (int32_t)(gyro_pos.y) /754);
+			UART_Log_Debug_32(" g_z: ", (int32_t)(gyro_pos.z) /754 );
+		}
 
-		if(encoder_started == 1)
+		if (encoder_started == 1)
 		{
 			UART_Log_Debug_32(" encoder min: ", encoder_range[0]);
 			UART_Log_Debug_32(" encoder max: ", encoder_range[1]);
+			if (AS5600_Is_Encoder_Data_Ready() == 1)
+				UART_Log_Debug_32(" encoder speed: ", AS5600_Get_Encoder_Speed());
 		}
 
 		UART_Log_Debug("\n\r");
@@ -231,8 +241,11 @@ void StartReadSensorGyro(void *argument)
 	// Update the gyro readings every 10 milliseconds
 	for(;;)
 	{
-		MPU6050_Update_Gyro_Pos();
-		osDelay(10);
+		if (gyro_started)
+			MPU6050_Update_Gyro_Pos();
+		if (encoder_started)
+			AS5600_Update_Encoder_Speed();
+		osDelay(500);
 	}
 	/* USER CODE END StartReadSensorGyro */
 }

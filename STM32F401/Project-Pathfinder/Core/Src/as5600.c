@@ -8,11 +8,14 @@
 
 #include "as5600.h"
 
+TIM_TypeDef *TIMER;
 uint32_t last_timer_count;
 
 uint16_t encoder_range[2];
-uint16_t encoder_debug_values[500];
-uint16_t encoder_delta = 0;
+uint16_t encoder_significance_value = 0;
+//uint16_t encoder_debug_values[500];
+uint32_t encoder_delta = 0;		// Difference in timer between rotations
+uint8_t encoder_data_ready = 0;	// 1 when encoder_delta has updated
 
 uint16_t encoder_previous_angle;
 
@@ -28,13 +31,15 @@ enum encoder_state_enum
  * @note   None
  * @retval None
  */
-void AS5600_Init(void)
+void AS5600_Init(TIM_TypeDef *TIM_INPUT)
 {
 	encoder_range[0] = -1;// Largest uint value
 	encoder_range[1] = 0;	// Smallest uint value
 	encoder_state = AS5600_INITIALIZED;
 
 	AS5600_Get_Raw_Angle(&encoder_previous_angle);
+
+	TIMER = TIM_INPUT;
 }
 
 /**
@@ -95,7 +100,7 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Range(int cycles)
 	uint16_t encoder_data;
 	HAL_StatusTypeDef status = HAL_OK;
 
-	int i = 0;
+	//int i = 0;
 	// Update the encoder range cycles amount of times
 	for (int current_cycles = 0; current_cycles < cycles; current_cycles++)
 	{
@@ -112,17 +117,108 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Range(int cycles)
 				break;
 		}
 		// Update the encoder range if necessary
-		if (encoder_data > encoder_range[1])
-			encoder_range[1] = encoder_data;
-		else if (encoder_data < encoder_range[0])
+		if (encoder_data < encoder_range[0])
 			encoder_range[0] = encoder_data;
+		else if (encoder_data > encoder_range[1])
+			encoder_range[1] = encoder_data;
 
 		// Add it to the debug list
-		encoder_debug_values[i] = encoder_data;
-		i++;
+		//encoder_debug_values[i] = encoder_data;
+		//i++;
 	}
+
+	// Increase the threshold of the range by a certain percent
+	encoder_range[0] += encoder_range[0] * AS5600_THRESHOLD_PERCENT;
+	encoder_range[1] -= encoder_range[1] * AS5600_THRESHOLD_PERCENT;
+
+	encoder_significance_value = encoder_range[1] - encoder_range[0] * AS5600_SIGNIFICANCE_PERCENT;
 
 	encoder_state = AS5600_CALIBRATED;
 
 	return status;
+}
+
+/**
+ * @brief  None
+ * @retval status: the HAL status of all the read and writes to the HAL i2c line.
+ */
+HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
+{
+	// Timing information
+	static bool timer_started = false;
+	static uint32_t prev_time = 0;
+	uint32_t current_time = TIMER->CNT;
+
+	// Direction is either positive or negative, 0 is uninitialized
+	static int8_t save_point_direction = 0;
+	static int8_t prev_direction = 0;
+	int8_t current_direction = 0;
+
+	// Current position of the motor
+	static uint16_t prev_angle = AS5600_MAX_RAW_ANGLE + 1;
+	uint16_t current_angle;
+
+	HAL_StatusTypeDef status = AS5600_Get_Raw_Angle(&current_angle);
+	if (status != HAL_OK)
+		return status;
+
+	if (prev_angle > AS5600_MAX_RAW_ANGLE)
+		prev_angle = current_angle;
+
+	// Only proceed with calculations if there has been a significant change in data
+	if (abs(current_angle - prev_angle) < encoder_significance_value)
+		return status;
+
+	// Get the direction of angle change
+	if (current_angle - prev_angle > 0)
+		current_direction = 1;
+	else if (current_angle - prev_angle < 0)
+		current_direction = -1;
+	else
+		current_direction = 0;
+
+	if (prev_direction == 0)
+		prev_direction = current_direction;
+
+	// We wait until the encoder value changes direction
+	if (current_direction == prev_direction)
+		return status;
+
+	// Only save the time when we switch directions for the first time entering a threshold
+	if ((current_angle < encoder_range[0] || current_angle > encoder_range[1]) &&
+		current_direction != save_point_direction)
+	{
+		if (timer_started == false)
+		{
+			prev_time = current_time;
+			timer_started = true;
+		}
+		else
+		{
+			encoder_delta = current_time - prev_time;
+			encoder_data_ready = 1;
+		}
+		save_point_direction = current_direction;
+	}
+
+	return status;
+}
+
+/**
+ * @brief  None
+ * @retval
+ */
+uint8_t AS5600_Is_Encoder_Data_Ready()
+{
+	return encoder_data_ready;
+}
+
+/**
+ * @brief  None
+ * @retval
+ */
+uint32_t AS5600_Get_Encoder_Speed()
+{
+	encoder_data_ready = 0;
+	return encoder_delta;
 }
