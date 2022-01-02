@@ -8,6 +8,7 @@ progress tasks and notes for future reference.
 ### Todo
 
 - [ ] Fill out README.md
+- [ ] Add LiDAR plans
 
 ## STM32F401:
 
