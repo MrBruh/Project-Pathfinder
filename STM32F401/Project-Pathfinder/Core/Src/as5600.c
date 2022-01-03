@@ -8,12 +8,17 @@
 
 #include "as5600.h"
 
+#include <string.h>
+#include <stdio.h>
+void AS5600_Debug_Print(const char *msg, const int32_t var);
+
 TIM_TypeDef *TIMER;
 uint32_t last_timer_count;
 
 uint16_t encoder_range[2];
 uint16_t encoder_significance_value = 0;
-//uint16_t encoder_debug_values[500];
+char encoder_debug_values[1000];
+int8_t encoder_debug_counter = 1;
 uint32_t encoder_delta = 0;		// Difference in timer between rotations
 uint8_t encoder_data_ready = 0;	// 1 when encoder_delta has updated
 
@@ -160,14 +165,22 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 
 	HAL_StatusTypeDef status = AS5600_Get_Raw_Angle(&current_angle);
 	if (status != HAL_OK)
+	{
+		AS5600_Debug_Print("!OK", current_angle);
 		return status;
+	}
+
 
 	if (prev_angle > AS5600_MAX_RAW_ANGLE)
 		prev_angle = current_angle;
 
 	// Only proceed with calculations if there has been a significant change in data
-	if (abs(current_angle - prev_angle) < encoder_significance_value)
+	/*if (abs(current_angle - prev_angle) < encoder_significance_value)
+	{
+		AS5600_Debug_Print("insig", current_angle);
+		AS5600_Debug_Print("prev", prev_angle);
 		return status;
+	}*/
 
 	// Get the direction of angle change
 	if (current_angle - prev_angle > 0)
@@ -182,7 +195,10 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 
 	// We wait until the encoder value changes direction
 	if (current_direction == prev_direction)
+	{
+		AS5600_Debug_Print("=dir", current_angle);
 		return status;
+	}
 
 	// Only save the time when we switch directions for the first time entering a threshold
 	if ((current_angle < encoder_range[0] || current_angle > encoder_range[1]) &&
@@ -192,15 +208,18 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 		{
 			prev_time = current_time;
 			timer_started = true;
+			AS5600_Debug_Print("p", current_angle);
 		}
 		else
 		{
 			encoder_delta = current_time - prev_time;
 			encoder_data_ready = 1;
+			AS5600_Debug_Print("n", current_angle);
 		}
 		save_point_direction = current_direction;
 	}
 
+	AS5600_Debug_Print("end", current_angle);
 	return status;
 }
 
@@ -221,4 +240,21 @@ uint32_t AS5600_Get_Encoder_Speed()
 {
 	encoder_data_ready = 0;
 	return encoder_delta;
+}
+
+void AS5600_Debug_Print(const char *msg, const int32_t var)
+{
+	if (encoder_debug_counter + strlen(msg) + 10 >= 1000 || encoder_debug_counter < 1)
+		return;
+
+	char buf[50];
+	sprintf(buf, msg);
+	sprintf(buf + strlen(buf), "%d", var);
+	sprintf(buf + strlen(buf), "\n\r");
+	int len = strlen(buf);
+
+	if (len + encoder_debug_counter < 1000)
+		sprintf(encoder_debug_values + strlen(encoder_debug_values), buf);
+	else
+		encoder_debug_counter = -1;
 }

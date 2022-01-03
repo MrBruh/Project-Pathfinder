@@ -182,7 +182,7 @@ void StartCommsTask(void *argument)
 	{
 		encoder_started = 1;
 		// Set the PWM generation at 20% for testing speed
-		speed = 65535 * 0.07;
+		speed = 65535 * 0.1;
 		TIM2->CCR1 = speed;
 	}
 
@@ -217,6 +217,11 @@ void StartCommsTask(void *argument)
 			UART_Log_Debug_32(" encoder max: ", encoder_range[1]);
 			if (AS5600_Is_Encoder_Data_Ready() == 1)
 				UART_Log_Debug_32(" encoder speed: ", AS5600_Get_Encoder_Speed());
+			if (encoder_debug_counter > 0)
+			{
+				UART_Log_Debug(encoder_debug_values);
+				encoder_debug_counter = -1;
+			}
 		}
 
 		UART_Log_Debug("\n\r");
@@ -241,11 +246,11 @@ void StartReadSensorGyro(void *argument)
 	// Update the gyro readings every 10 milliseconds
 	for(;;)
 	{
-		if (gyro_started)
+		if (gyro_started == 1)
 			MPU6050_Update_Gyro_Pos();
-		if (encoder_started)
+		if (encoder_started == 1)
 			AS5600_Update_Encoder_Speed();
-		osDelay(500);
+		osDelay(10);
 	}
 	/* USER CODE END StartReadSensorGyro */
 }
