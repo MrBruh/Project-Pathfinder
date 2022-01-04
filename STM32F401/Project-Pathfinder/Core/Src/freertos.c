@@ -58,23 +58,23 @@ int encoder_started = 0;
 /* Definitions for statusTask */
 osThreadId_t statusTaskHandle;
 const osThreadAttr_t statusTask_attributes = {
-		.name = "statusTask",
-		.stack_size = 128 * 4,
-		.priority = (osPriority_t) osPriorityBelowNormal,
+  .name = "statusTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for commsTask */
 osThreadId_t commsTaskHandle;
 const osThreadAttr_t commsTask_attributes = {
-		.name = "commsTask",
-		.stack_size = 128 * 4,
-		.priority = (osPriority_t) osPriorityNormal,
+  .name = "commsTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for readSensorGyro */
 osThreadId_t readSensorGyroHandle;
 const osThreadAttr_t readSensorGyro_attributes = {
-		.name = "readSensorGyro",
-		.stack_size = 128 * 4,
-		.priority = (osPriority_t) osPriorityBelowNormal,
+  .name = "readSensorGyro",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,48 +89,48 @@ void StartReadSensorGyro(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
 void MX_FREERTOS_Init(void) {
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-	/* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-	/* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-	/* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-	/* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-	/* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-	/* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-	/* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-	/* Create the thread(s) */
-	/* creation of statusTask */
-	statusTaskHandle = osThreadNew(StartStatusTask, NULL, &statusTask_attributes);
+  /* Create the thread(s) */
+  /* creation of statusTask */
+  statusTaskHandle = osThreadNew(StartStatusTask, NULL, &statusTask_attributes);
 
-	/* creation of commsTask */
-	commsTaskHandle = osThreadNew(StartCommsTask, NULL, &commsTask_attributes);
+  /* creation of commsTask */
+  commsTaskHandle = osThreadNew(StartCommsTask, NULL, &commsTask_attributes);
 
-	/* creation of readSensorGyro */
-	readSensorGyroHandle = osThreadNew(StartReadSensorGyro, NULL, &readSensorGyro_attributes);
+  /* creation of readSensorGyro */
+  readSensorGyroHandle = osThreadNew(StartReadSensorGyro, NULL, &readSensorGyro_attributes);
 
-	/* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-	/* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-	/* USER CODE BEGIN RTOS_EVENTS */
+  /* USER CODE BEGIN RTOS_EVENTS */
 	/* add events, ... */
-	/* USER CODE END RTOS_EVENTS */
+  /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -143,14 +143,14 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartStatusTask */
 void StartStatusTask(void *argument)
 {
-	/* USER CODE BEGIN StartStatusTask */
+  /* USER CODE BEGIN StartStatusTask */
 	// Currently only blink every second to indicate the program is running
 	for(;;)
 	{
 		osDelay(1000);
 		GPIOC -> ODR ^= GPIO_PIN_13;
 	}
-	/* USER CODE END StartStatusTask */
+  /* USER CODE END StartStatusTask */
 }
 
 /* USER CODE BEGIN Header_StartCommsTask */
@@ -162,7 +162,7 @@ void StartStatusTask(void *argument)
 /* USER CODE END Header_StartCommsTask */
 void StartCommsTask(void *argument)
 {
-	/* USER CODE BEGIN StartCommsTask */
+  /* USER CODE BEGIN StartCommsTask */
 
 	// Delay to allow time for hardware to power up
 	osDelay(100);
@@ -177,7 +177,15 @@ void StartCommsTask(void *argument)
 	AS5600_Reset_Encoder_Timer(TIM5->CNT);
 	HAL_StatusTypeDef status = AS5600_Update_Encoder_Range(2000);
 	if (status != HAL_OK)
+	{
+		/*while (status != HAL_OK)
+		{
+			osDelay(1000);
+			UART_Log_Status("encoder init failed\n\rs: ", status);
+			status = AS5600_Update_Encoder_Range(2000);
+		}*/
 		UART_Log_Status("encoder init failed\n\rs: ", status);
+	}
 	else
 	{
 		encoder_started = 1;
@@ -215,18 +223,20 @@ void StartCommsTask(void *argument)
 		{
 			UART_Log_Debug_32(" encoder min: ", encoder_range[0]);
 			UART_Log_Debug_32(" encoder max: ", encoder_range[1]);
+			UART_Log_Debug_32(" e: ", encoder_debug_counter);
 			if (AS5600_Is_Encoder_Data_Ready() == 1)
 				UART_Log_Debug_32(" encoder speed: ", AS5600_Get_Encoder_Speed());
-			if (encoder_debug_counter > 0)
+			if (encoder_debug_counter < 1)
 			{
 				UART_Log_Debug(encoder_debug_values);
-				encoder_debug_counter = -1;
+				encoder_debug_counter = 1;
+				encoder_debug_values[0] = '\0';
 			}
 		}
 
 		UART_Log_Debug("\n\r");
 	}
-	/* USER CODE END StartCommsTask */
+  /* USER CODE END StartCommsTask */
 }
 
 /* USER CODE BEGIN Header_StartReadSensorGyro */
@@ -238,7 +248,7 @@ void StartCommsTask(void *argument)
 /* USER CODE END Header_StartReadSensorGyro */
 void StartReadSensorGyro(void *argument)
 {
-	/* USER CODE BEGIN StartReadSensorGyro */
+  /* USER CODE BEGIN StartReadSensorGyro */
 	osDelay(1000);
 
 	// Begin the timer for the gyro readings
@@ -252,7 +262,7 @@ void StartReadSensorGyro(void *argument)
 			AS5600_Update_Encoder_Speed();
 		osDelay(10);
 	}
-	/* USER CODE END StartReadSensorGyro */
+  /* USER CODE END StartReadSensorGyro */
 }
 
 /* Private application code --------------------------------------------------*/

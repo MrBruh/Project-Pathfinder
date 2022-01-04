@@ -17,7 +17,7 @@ uint32_t last_timer_count;
 
 uint16_t encoder_range[2];
 uint16_t encoder_significance_value = 0;
-char encoder_debug_values[1000];
+char encoder_debug_values[2000];
 int8_t encoder_debug_counter = 1;
 uint32_t encoder_delta = 0;		// Difference in timer between rotations
 uint8_t encoder_data_ready = 0;	// 1 when encoder_delta has updated
@@ -175,12 +175,13 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 		prev_angle = current_angle;
 
 	// Only proceed with calculations if there has been a significant change in data
-	/*if (abs(current_angle - prev_angle) < encoder_significance_value)
+	if (abs(current_angle - prev_angle) > encoder_significance_value)
 	{
 		AS5600_Debug_Print("insig", current_angle);
 		AS5600_Debug_Print("prev", prev_angle);
+		prev_angle = current_angle;
 		return status;
-	}*/
+	}
 
 	// Get the direction of angle change
 	if (current_angle - prev_angle > 0)
@@ -197,6 +198,7 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 	if (current_direction == prev_direction)
 	{
 		AS5600_Debug_Print("=dir", current_angle);
+		prev_angle = current_angle;
 		return status;
 	}
 
@@ -220,6 +222,7 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 	}
 
 	AS5600_Debug_Print("end", current_angle);
+	prev_angle = current_angle;
 	return status;
 }
 
@@ -244,17 +247,20 @@ uint32_t AS5600_Get_Encoder_Speed()
 
 void AS5600_Debug_Print(const char *msg, const int32_t var)
 {
-	if (encoder_debug_counter + strlen(msg) + 10 >= 1000 || encoder_debug_counter < 1)
+	if (encoder_debug_counter + strlen(msg) + 10 >= 2000 || encoder_debug_counter < 1)
 		return;
 
-	char buf[50];
+	char buf[15];
 	sprintf(buf, msg);
 	sprintf(buf + strlen(buf), "%d", var);
 	sprintf(buf + strlen(buf), "\n\r");
 	int len = strlen(buf);
 
-	if (len + encoder_debug_counter < 1000)
-		sprintf(encoder_debug_values + strlen(encoder_debug_values), buf);
+	if (len + encoder_debug_counter < 2000)
+	{
+		strcat(encoder_debug_values, buf);
+		encoder_debug_counter += len;
+	}
 	else
-		encoder_debug_counter = -1;
+		encoder_debug_counter = 0;
 }
