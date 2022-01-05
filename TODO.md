@@ -19,6 +19,8 @@ progress tasks and notes for future reference.
 - [ ] Reduce the number of magic numbers in the code
 - [ ] Fill out all function descriptions
 
+- [ ] Create a serial interface for external devices for motion control
+
 ### In Progress
 
 - [ ] Testing individual hardware components and sensors
