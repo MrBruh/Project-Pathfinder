@@ -259,7 +259,11 @@ void StartReadSensorGyro(void *argument)
 		if (gyro_started == 1)
 			MPU6050_Update_Gyro_Pos();
 		if (encoder_started == 1)
+		{
+			taskENTER_CRITICAL();
 			AS5600_Update_Encoder_Speed();
+			taskEXIT_CRITICAL();
+		}
 		osDelay(10);
 	}
   /* USER CODE END StartReadSensorGyro */

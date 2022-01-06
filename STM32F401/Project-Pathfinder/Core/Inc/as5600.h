@@ -26,7 +26,7 @@
 
 extern uint16_t encoder_range[];
 extern char encoder_debug_values[];
-extern int8_t encoder_debug_counter;
+extern int32_t encoder_debug_counter;
 
 void AS5600_Init(TIM_TypeDef *TIM_INPUT);
 HAL_StatusTypeDef AS5600_Get_Raw_Angle(uint16_t *raw_angle);

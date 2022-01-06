@@ -18,7 +18,7 @@ uint32_t last_timer_count;
 uint16_t encoder_range[2];
 uint16_t encoder_significance_value = 0;
 char encoder_debug_values[2000];
-int8_t encoder_debug_counter = 1;
+int32_t encoder_debug_counter = 1;
 uint32_t encoder_delta = 0;		// Difference in timer between rotations
 uint8_t encoder_data_ready = 0;	// 1 when encoder_delta has updated
 
@@ -194,13 +194,17 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 	if (prev_direction == 0)
 		prev_direction = current_direction;
 
+	AS5600_Debug_Print_Series("pdir", prev_direction);
+	AS5600_Debug_Print_Series("cdir", current_direction);
 	// We wait until the encoder value changes direction
 	if (current_direction == prev_direction)
 	{
+		AS5600_Debug_Print_Series("prev", prev_angle);
 		AS5600_Debug_Print("=dir", current_angle);
 		prev_angle = current_angle;
 		return status;
 	}
+	prev_direction = current_direction;
 
 	// Only save the time when we switch directions for the first time entering a threshold
 	if ((current_angle < encoder_range[0] || current_angle > encoder_range[1]) &&
@@ -217,10 +221,12 @@ HAL_StatusTypeDef AS5600_Update_Encoder_Speed()
 			encoder_delta = current_time - prev_time;
 			encoder_data_ready = 1;
 			AS5600_Debug_Print("n", current_angle);
+			prev_time = current_time;
 		}
 		save_point_direction = current_direction;
 	}
 
+	AS5600_Debug_Print_Series("prev", prev_angle);
 	AS5600_Debug_Print("end", current_angle);
 	prev_angle = current_angle;
 	return status;
@@ -247,10 +253,15 @@ uint32_t AS5600_Get_Encoder_Speed()
 
 void AS5600_Debug_Print(const char *msg, const int32_t var)
 {
+	return;
 	if (encoder_debug_counter + strlen(msg) + 10 >= 2000 || encoder_debug_counter < 1)
+	{
+		encoder_debug_counter = 0;
 		return;
+	}
 
 	char buf[15];
+	buf[0] = '\0';
 	sprintf(buf, msg);
 	sprintf(buf + strlen(buf), "%d", var);
 	sprintf(buf + strlen(buf), "\n\r");
@@ -261,6 +272,26 @@ void AS5600_Debug_Print(const char *msg, const int32_t var)
 		strcat(encoder_debug_values, buf);
 		encoder_debug_counter += len;
 	}
-	else
+}
+
+void AS5600_Debug_Print_Series(const char *msg, const int32_t var)
+{
+	return;
+	if (encoder_debug_counter + strlen(msg) + 10 >= 2000 || encoder_debug_counter < 1)
+	{
 		encoder_debug_counter = 0;
+		return;
+	}
+
+	char buf[15];
+	buf[0] = '\0';
+	sprintf(buf, msg);
+	sprintf(buf + strlen(buf), "%d", var);
+	int len = strlen(buf);
+
+	if (len + encoder_debug_counter < 2000)
+	{
+		strcat(encoder_debug_values, buf);
+		encoder_debug_counter += len;
+	}
 }
